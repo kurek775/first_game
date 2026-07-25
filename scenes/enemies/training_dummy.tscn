@@ -1,0 +1,130 @@
+; Training dummy. Built from exactly the same combat components as the player
+; — Health, Hurtbox, Hitbox, MeleeAttack, HitReaction, CharacterMotor — which
+; is the whole point: if the dummy needed special-case code, the components
+; would be player code wearing a disguise.
+;
+; It is a CharacterBody3D rather than a StaticBody3D so knockback is visible.
+; It never walks anywhere; Brain only rotates it and triggers swings.
+;
+; Its swing is slow on purpose (0.45s windup) so there is time to raise a guard
+; and actually test blocking.
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scripts/motion/character_motor.gd" id="1_motor"]
+[ext_resource type="Script" path="res://scripts/combat/health.gd" id="2_health"]
+[ext_resource type="Script" path="res://scripts/combat/hurtbox.gd" id="3_hurtbox"]
+[ext_resource type="Script" path="res://scripts/combat/hitbox.gd" id="4_hitbox"]
+[ext_resource type="Script" path="res://scripts/combat/melee_attack.gd" id="5_melee"]
+[ext_resource type="Script" path="res://scripts/combat/hit_reaction.gd" id="6_reaction"]
+[ext_resource type="Script" path="res://scripts/enemies/dummy_brain.gd" id="7_brain"]
+[ext_resource type="Script" path="res://scripts/ui/health_label.gd" id="8_label"]
+[ext_resource type="Material" path="res://resources/materials/enemy.tres" id="9_enemy_mat"]
+[ext_resource type="Material" path="res://resources/materials/accent.tres" id="10_accent"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_body"]
+material = ExtResource("9_enemy_mat")
+radius = 0.4
+height = 1.8
+
+[sub_resource type="BoxMesh" id="BoxMesh_nose"]
+material = ExtResource("10_accent")
+size = Vector3(0.22, 0.22, 0.5)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hurt"]
+radius = 0.45
+height = 1.9
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hit"]
+size = Vector3(1.6, 1.4, 1.8)
+
+[node name="TrainingDummy" type="CharacterBody3D" groups=["enemy"]]
+collision_layer = 4
+collision_mask = 1
+floor_max_angle = 0.872665
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_body")
+
+[node name="Nose" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, -0.42)
+mesh = SubResource("BoxMesh_nose")
+
+[node name="Hitbox" type="Area3D" parent="Visual" node_paths=PackedStringArray("source")]
+collision_layer = 0
+collision_mask = 8
+monitorable = false
+script = ExtResource("4_hitbox")
+source = NodePath("../..")
+damage = 12.0
+knockback = 7.0
+
+[node name="Collision" type="CollisionShape3D" parent="Visual/Hitbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -1.1)
+shape = SubResource("BoxShape3D_hit")
+
+[node name="Motor" type="Node" parent="."]
+script = ExtResource("1_motor")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("2_health")
+max_health = 120.0
+
+[node name="Hurtbox" type="Area3D" parent="." node_paths=PackedStringArray("body", "health")]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+script = ExtResource("3_hurtbox")
+body = NodePath("..")
+health = NodePath("../Health")
+
+[node name="Collision" type="CollisionShape3D" parent="Hurtbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_hurt")
+
+[node name="HitReaction" type="Node" parent="." node_paths=PackedStringArray("motor")]
+script = ExtResource("6_reaction")
+motor = NodePath("../Motor")
+stagger_time = 0.35
+blocked_stagger_time = 0.12
+
+[node name="MeleeAttack" type="Node" parent="." node_paths=PackedStringArray("hitbox")]
+script = ExtResource("5_melee")
+hitbox = NodePath("../Visual/Hitbox")
+windup = 0.45
+active = 0.15
+recovery = 0.6
+
+[node name="Brain" type="Node" parent="." node_paths=PackedStringArray("body", "facing", "attack", "health", "reaction")]
+script = ExtResource("7_brain")
+body = NodePath("..")
+facing = NodePath("../Visual")
+attack = NodePath("../MeleeAttack")
+health = NodePath("../Health")
+reaction = NodePath("../HitReaction")
+enabled = true
+engage_range = 2.3
+interval = 2.5
+
+[node name="HealthLabel" type="Label3D" parent="." node_paths=PackedStringArray("health")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+billboard = 1
+no_depth_test = true
+pixel_size = 0.004
+font_size = 40
+outline_size = 10
+text = "120 / 120"
+script = ExtResource("8_label")
+health = NodePath("../Health")
+
+[connection signal="hit_taken" from="Hurtbox" to="HitReaction" method="react"]

@@ -1,10 +1,16 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
-[ext_resource type="Script" path="res://scripts/player/player_motor.gd" id="2_motor"]
+[ext_resource type="Script" path="res://scripts/motion/character_motor.gd" id="2_motor"]
 [ext_resource type="Script" path="res://scripts/player/camera_rig.gd" id="3_camera"]
 [ext_resource type="Material" path="res://resources/materials/player_body.tres" id="4_body_mat"]
 [ext_resource type="Material" path="res://resources/materials/accent.tres" id="5_accent_mat"]
+[ext_resource type="Script" path="res://scripts/combat/health.gd" id="6_health"]
+[ext_resource type="Script" path="res://scripts/combat/blocker.gd" id="7_blocker"]
+[ext_resource type="Script" path="res://scripts/combat/hurtbox.gd" id="8_hurtbox"]
+[ext_resource type="Script" path="res://scripts/combat/hitbox.gd" id="9_hitbox"]
+[ext_resource type="Script" path="res://scripts/combat/melee_attack.gd" id="10_melee"]
+[ext_resource type="Script" path="res://scripts/combat/hit_reaction.gd" id="11_reaction"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -22,7 +28,14 @@ size = Vector3(0.22, 0.22, 0.5)
 [sub_resource type="SphereShape3D" id="SphereShape3D_arm"]
 radius = 0.25
 
-[node name="Player" type="CharacterBody3D"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hurt"]
+radius = 0.45
+height = 1.9
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hit"]
+size = Vector3(1.6, 1.4, 1.8)
+
+[node name="Player" type="CharacterBody3D" groups=["player"]]
 collision_layer = 2
 collision_mask = 1
 floor_max_angle = 0.872665
@@ -41,6 +54,22 @@ mesh = SubResource("CapsuleMesh_body")
 [node name="Nose" type="MeshInstance3D" parent="Visual"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, -0.42)
 mesh = SubResource("BoxMesh_nose")
+
+; Child of Visual, so it sweeps wherever the character is facing rather than
+; wherever the body happens to be moving. Layer 0 / mask 4 ("hurtbox"): nothing
+; needs to detect a hitbox, a hitbox only looks for hurtboxes.
+[node name="Hitbox" type="Area3D" parent="Visual" node_paths=PackedStringArray("source")]
+collision_layer = 0
+collision_mask = 8
+monitorable = false
+script = ExtResource("9_hitbox")
+source = NodePath("../..")
+damage = 25.0
+knockback = 9.0
+
+[node name="Collision" type="CollisionShape3D" parent="Visual/Hitbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -1.1)
+shape = SubResource("BoxShape3D_hit")
 
 [node name="Motor" type="Node" parent="."]
 script = ExtResource("2_motor")
@@ -62,3 +91,45 @@ margin = 0.1
 [node name="Camera3D" type="Camera3D" parent="CameraRig/SpringArm3D"]
 current = true
 fov = 70.0
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("6_health")
+max_health = 100.0
+
+[node name="Blocker" type="Node" parent="." node_paths=PackedStringArray("facing")]
+script = ExtResource("7_blocker")
+facing = NodePath("../Visual")
+block_arc_deg = 120.0
+chip_damage_fraction = 0.15
+move_scale = 0.45
+
+; Layer 4 ("hurtbox"), masks nothing. Hurtboxes are found, they never look.
+[node name="Hurtbox" type="Area3D" parent="." node_paths=PackedStringArray("body", "health", "blocker")]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+script = ExtResource("8_hurtbox")
+body = NodePath("..")
+health = NodePath("../Health")
+blocker = NodePath("../Blocker")
+
+[node name="Collision" type="CollisionShape3D" parent="Hurtbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_hurt")
+
+[node name="HitReaction" type="Node" parent="." node_paths=PackedStringArray("motor")]
+script = ExtResource("11_reaction")
+motor = NodePath("../Motor")
+stagger_time = 0.28
+blocked_stagger_time = 0.12
+
+[node name="MeleeAttack" type="Node" parent="." node_paths=PackedStringArray("hitbox")]
+script = ExtResource("10_melee")
+hitbox = NodePath("../Visual/Hitbox")
+windup = 0.18
+active = 0.12
+recovery = 0.35
+move_scale = 0.35
+
+[connection signal="hit_taken" from="Hurtbox" to="HitReaction" method="react"]
+[connection signal="hit_blocked" from="Hurtbox" to="HitReaction" method="react_blocked"]

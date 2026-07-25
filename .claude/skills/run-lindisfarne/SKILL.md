@@ -87,6 +87,45 @@ progression `0.00 → -1.79 → -4.50` proves the crypt stairs are walkable;
 `ground=True` on every row proves nothing wedges on a doorway, gate or step;
 and the `z` values prove the doorway and gate gaps are actually passable.
 
+### Combat regression
+
+```bash
+DISPLAY=:0 .claude/skills/run-lindisfarne/combat.sh /tmp/lindisfarne-combat
+```
+
+Known-good. Note each phase teleports the player back into reach first —
+knockback pushes you out of range and the dummy cannot chase (stage 4's job):
+
+```
+01_before      player_hp=100.0  dummy_hp=120.0  dist=2.00
+02_swing1      player_hp=100.0  dummy_hp= 95.0  (-25.0)  dist=4.46
+03_swing2      player_hp=100.0  dummy_hp= 70.0  (-25.0)  dist=3.71
+04_swing3      player_hp=100.0  dummy_hp= 45.0  (-25.0)  dist=2.89
+05_unguarded   player_hp= 88.0  (-12.0)   no guard
+06_blocked     player_hp= 84.4  (-1.8/hit) guard up, frontal — 15% chip
+07_back_turned player_hp= 72.4  (-12.0)   guard up but facing away
+```
+
+Read it with:
+
+```bash
+python3 -c "
+import json
+d=json.load(open('/tmp/lindisfarne-combat/log.json'))
+prev_p=100.0; prev_f=120.0
+for e in d:
+    if not e['cmd'].startswith('shot'): continue
+    hp=e.get('hp'); f=[x for x in e.get('foes',[]) if 'Passive' in x['name']][0]
+    print('%-14s player_hp=%-6s (-%4.1f)  dummy_hp=%-6s (-%4.1f)  dist=%5.2f  %s' % (
+        e['cmd'][5:], hp, prev_p-hp, f['hp'], prev_f-f['hp'], f['dist'], e.get('note','')))
+    prev_p=hp; prev_f=f['hp']
+"
+```
+
+The three block phases are the load-bearing ones: 12.0 / 1.8 / 12.0 proves the
+guard reduces damage *and* that the frontal arc refuses hits from behind. If
+all three read the same, blocking has silently become a no-op or an always-op.
+
 ### Geometry check without playing
 
 Raycasts every key surface and compares against expected heights — much faster

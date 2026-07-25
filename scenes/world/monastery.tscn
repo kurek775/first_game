@@ -11,7 +11,7 @@
 ; MeshInstance3D only, with no collision at all. Godot's CharacterBody3D has no
 ; built-in step-up, so a capsule cannot climb 0.5m boxes -- it just wedges. The
 ; standard greybox answer is to let the player walk an invisible ramp while the
-; eye sees stairs. If you ever add real step-up logic to PlayerMotor, swap the
+; eye sees stairs. If you ever add real step-up logic to CharacterMotor, swap the
 ; ramp shape out for per-step shapes.
 [gd_scene load_steps=49 format=3]
 

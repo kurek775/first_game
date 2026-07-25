@@ -4,13 +4,14 @@
 ;
 ; Stage 1's flat plane and obstacle course lived here and are now gone -- the
 ; monastery ramp/stairs and the low wall cover the same movement tests.
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="2_hud"]
 [ext_resource type="PackedScene" path="res://scenes/world/terrain.tscn" id="3_terrain"]
 [ext_resource type="PackedScene" path="res://scenes/world/monastery.tscn" id="4_monastery"]
 [ext_resource type="PackedScene" path="res://scenes/world/longship.tscn" id="5_longship"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/training_dummy.tscn" id="6_dummy"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.29, 0.38, 0.5, 1)
@@ -47,6 +48,18 @@ directional_shadow_max_distance = 180.0
 ; Beached, west of the longship hull, facing north up the island toward the gate.
 [node name="Player" parent="." instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.2, 42)
+
+; Two dummies on the beach, a short walk from the spawn point.
+; Passive one never swings back -- use it to read damage numbers.
+; Aggressive one swings every 2.5s in range -- use it to test blocking.
+[node name="DummyPassive" parent="." instance=ExtResource("6_dummy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.2, 36)
+
+[node name="Brain" parent="DummyPassive"]
+enabled = false
+
+[node name="DummyAggressive" parent="." instance=ExtResource("6_dummy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.2, 34)
 
 [node name="DebugHud" type="CanvasLayer" parent="." node_paths=PackedStringArray("player")]
 script = ExtResource("2_hud")

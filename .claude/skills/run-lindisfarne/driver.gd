@@ -19,7 +19,15 @@
 ##   pitch <degrees>         set spring-arm pitch directly
 ##   mouse <dx> <dy>         inject real mouse motion through camera_rig.gd
 ##   note <text>             label the next log entry
+##
+## Input actions available to press/release/tap:
+##   move_forward move_back move_left move_right sprint attack block
+##
+## Each command appends a state entry (position, speed, hp, guard, attack
+## phase, and every enemy's hp/distance) to stdout and to --log.
 extends Node
+
+const ATTACK_PHASE_NAMES := ["idle", "windup", "active", "recovery"]
 
 var _scene_path := "res://scenes/main.tscn"
 var _shots_dir := "user://shots"
@@ -33,6 +41,9 @@ var _rig: Node3D
 var _arm: SpringArm3D
 var _motor: Node
 var _hud_label: Label
+var _health: Node
+var _blocker: Node
+var _attack: Node
 
 var _held: Array[String] = []
 var _entries: Array = []
@@ -63,6 +74,13 @@ func _ready() -> void:
 	# Default to NOT stealing the cursor — a human may be at this display.
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if _capture_mouse else Input.MOUSE_MODE_VISIBLE
 
+	# ...and with a human at that display, their physical mouse would otherwise
+	# leak into camera_rig and silently rotate the camera mid-run, making yaw
+	# non-deterministic. Deafen the rig unless the caller explicitly asked for
+	# real mouse interaction. The `mouse` command re-enables it around itself.
+	if not _capture_mouse and _rig != null:
+		_rig.set_process_unhandled_input(false)
+
 	for statement in _program.split(";", false):
 		await _exec(statement.strip_edges())
 
@@ -83,6 +101,9 @@ func _bind_nodes() -> bool:
 	_arm = _player.get_node_or_null("CameraRig/SpringArm3D") as SpringArm3D
 	_motor = _player.get_node_or_null("Motor")
 	_hud_label = _game.find_child("Label", true, false) as Label
+	_health = _player.get_node_or_null("Health")
+	_blocker = _player.get_node_or_null("Blocker")
+	_attack = _player.get_node_or_null("MeleeAttack")
 	return true
 
 
@@ -178,6 +199,7 @@ func _release_all() -> void:
 func _mouse(dx: float, dy: float) -> void:
 	var previous := Input.mouse_mode
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	_rig.set_process_unhandled_input(true)
 
 	var event := InputEventMouseMotion.new()
 	event.relative = Vector2(dx, dy)
@@ -188,6 +210,8 @@ func _mouse(dx: float, dy: float) -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	Input.mouse_mode = previous
+	if not _capture_mouse:
+		_rig.set_process_unhandled_input(false)
 
 
 func _shot(shot_name: String) -> void:
@@ -223,6 +247,28 @@ func _state() -> Dictionary:
 	if _arm != null:
 		state["pitch_deg"] = snappedf(rad_to_deg(_arm.rotation.x), 0.1)
 		state["arm_length"] = snappedf(_arm.get_hit_length(), 0.01)
+	if _health != null:
+		state["hp"] = snappedf(_health.current, 0.1)
+	if _blocker != null:
+		state["guard"] = _blocker.is_blocking()
+	if _attack != null:
+		state["atk"] = ATTACK_PHASE_NAMES[_attack.phase]
+
+	# Every enemy's health, so combat can be checked numerically instead of by
+	# squinting at screenshots.
+	var foes := []
+	for enemy in get_tree().get_nodes_in_group("enemy"):
+		var enemy_health := enemy.get_node_or_null("Health")
+		var enemy_pos: Vector3 = enemy.global_position
+		foes.append({
+			"name": str(enemy.name),
+			"hp": snappedf(enemy_health.current, 0.1) if enemy_health != null else -1.0,
+			"pos": [snappedf(enemy_pos.x, 0.01), snappedf(enemy_pos.y, 0.01), snappedf(enemy_pos.z, 0.01)],
+			"dist": snappedf(enemy_pos.distance_to(_player.global_position), 0.01),
+		})
+	if not foes.is_empty():
+		state["foes"] = foes
+
 	if _hud_label != null:
 		state["hud"] = _hud_label.text.replace("\n", " | ")
 	return state
