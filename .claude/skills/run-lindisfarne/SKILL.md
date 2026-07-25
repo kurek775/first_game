@@ -170,12 +170,15 @@ godot --headless --script /tmp/probe.gd
 ## Run: human path
 
 ```bash
-DISPLAY=:0 godot
+./play.sh          # play
+./play.sh edit     # open the editor instead
 ```
 
-Opens the window, captures the mouse, WASD + Shift, **Esc** releases the
-cursor. Useless without a display, and you cannot script it — prefer the
-driver.
+Works from any working directory, runs the import step first, and defaults
+`DISPLAY` to `:0` when it is unset. Opens the window and captures the mouse:
+WASD + Shift, **Esc** releases the cursor.
+
+You cannot script it — prefer the driver above for anything you need to verify.
 
 Tuning knobs are `@export`s on `Player/Motor`. With the game running, use the
 editor's **Remote** scene tab to change them live.
