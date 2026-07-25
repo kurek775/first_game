@@ -38,7 +38,7 @@ godot --headless --import
 ```
 
 Skipping this does **not** produce a missing-file error. It produces
-`Could not find type "PlayerMotor" in the current scope`, the player scripts
+`Could not find type "CharacterMotor" in the current scope`, the player scripts
 fail to load, and the game runs with a frozen character — see Troubleshooting.
 
 ## Run: agent path
@@ -126,6 +126,41 @@ The three block phases are the load-bearing ones: 12.0 / 1.8 / 12.0 proves the
 guard reduces damage *and* that the frontal arc refuses hits from behind. If
 all three read the same, blocking has silently become a no-op or an always-op.
 
+### Enemy AI regression
+
+```bash
+DISPLAY=:0 .claude/skills/run-lindisfarne/ai.sh /tmp/lindisfarne-ai
+```
+
+Known-good — the whole state machine plus navmesh pathing:
+
+```
+01_idle    state=Idle   enemy=( 20.0, -6.0)  out of sight
+02_alert   state=Alert  enemy=( 20.0, -6.0)  spotted, 0.5s reaction beat
+03_chase   state=Chase  enemy=( 20.0, -1.0)  committed
+04_pathing state=Chase  enemy=( 12.7,  5.5)  routing AROUND the church
+05_pathing state=Chase  enemy=(  3.2,  2.5)  still routing
+06_gave_up state=Idle   enemy=(  1.7,  1.1)  6s without sight, gives up
+07_attack  state=Idle   dist=2.0             re-engaged
+08_killed  state=Dead   enemy_hp=0.0
+09_corpse  state=Dead   enemy_hp=0.0         corpse stays inert
+```
+
+Shots 04/05 are the load-bearing ones: the x coordinate must *move* (20 -> 12.7
+-> 3.2). If the spearman walks a straight line to the player it is not using
+the navmesh at all, which usually means the bake is stale or empty.
+
+### Re-baking the navmesh
+
+Run after ANY change to level collision:
+
+```bash
+godot --headless --script tools/bake_navmesh.gd
+```
+
+Prints `baked <n> polygons`. 255 for the current island. Zero polygons means
+the world is not parented under the `Navigation` node.
+
 ### Geometry check without playing
 
 Raycasts every key surface and compares against expected heights — much faster
@@ -181,6 +216,7 @@ Commands:
 | `press` / `release <action>` | hold/release `move_forward`, `move_back`, `move_left`, `move_right`, `sprint` |
 | `tap <action> <sec>` | press, wait, release |
 | `tp <x> <y> <z>` | teleport player, zero velocity |
+| `tpnear <name> <m>` | stand that far from a named enemy, facing it — use this instead of hardcoded coordinates, which go stale the moment an enemy can walk |
 | `yaw <deg>` / `pitch <deg>` | set camera rotation **directly**, bypassing `camera_rig.gd` |
 | `mouse <dx> <dy>` | inject motion **through** `camera_rig.gd._unhandled_input` — use this to test mouse-look itself |
 | `note <text>` | label the next log entry |
@@ -254,6 +290,25 @@ editor's **Remote** scene tab to change them live.
   it to `PackedStringArray("4.7", "Forward Plus")`.
 - **`.gd.uid` sidecars are generated on import and should be committed** —
   they keep script references stable across renames. `.godot/` should not be.
+- **Navigation does not work under `godot --script`.** `map_get_closest_point`
+  and `map_get_path` return `Vector3.ZERO` / empty even with a correctly baked
+  mesh and an active map, because NavigationServer3D never iterates in that
+  context — `map_force_update()` does not save you. Verify pathing by driving
+  the real game (`ai.sh`) and watching enemy positions change, never with a
+  `--script` probe. Physics raycasts *do* work there, which makes this
+  especially easy to trip over.
+- **The navmesh bakes from STATIC COLLIDERS, not mesh instances**
+  (`geometry_parsed_geometry_type = 1`). The crypt stairs are a smooth ramp for
+  physics with nine collision-free step meshes on top; parsing meshes would
+  bake nine 0.5m ledges no agent can climb.
+- **AI ranges must sit inside the hitbox's real reach.** Hitbox front face is
+  2.0m from body centre, target hurtbox radius is 0.45, so contact needs
+  <= 2.45m. An `attack_range` above that makes an enemy park just out of reach
+  and swing at air forever, which reads exactly like "blocking works".
+- **`_ready` propagates children-first.** A child StateMachine's `_ready` runs
+  BEFORE its parent's, so every `@onready` on the parent is still null. The
+  machine therefore has an explicit `start()` the owner calls from its own
+  `_ready`.
 - The driver's `yaw`/`pitch` set rotations directly and do **not** go through
   `camera_rig.gd`. A later `mouse` command will fight them, because the rig
   keeps its own pitch accumulator. Use `mouse` when testing camera code.
@@ -262,7 +317,7 @@ editor's **Remote** scene tab to change them live.
 
 | Symptom | Cause / fix |
 |---|---|
-| `Could not find type "PlayerMotor" in the current scope`, character frozen | Global class cache missing. Run `godot --headless --import`. |
+| `Could not find type "CharacterMotor" in the current scope`, character frozen | Global class cache missing. Run `godot --headless --import`. |
 | Driver hangs forever, no output, needs `timeout` to kill | A `shot` under `--headless` on a build without the headless guard. Drop `--headless` and set `DISPLAY=:0`. |
 | `driver: no CharacterBody3D named 'Player' inside ...` | `--scene` points at a scene with no `Player` node. |
 | HUD reads `DebugHud: no player assigned` | The `node_paths=` gotcha above. |

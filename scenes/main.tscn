@@ -4,7 +4,7 @@
 ;
 ; Stage 1's flat plane and obstacle course lived here and are now gone -- the
 ; monastery ramp/stairs and the low wall cover the same movement tests.
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="2_hud"]
@@ -12,6 +12,8 @@
 [ext_resource type="PackedScene" path="res://scenes/world/monastery.tscn" id="4_monastery"]
 [ext_resource type="PackedScene" path="res://scenes/world/longship.tscn" id="5_longship"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/training_dummy.tscn" id="6_dummy"]
+[ext_resource type="NavigationMesh" path="res://resources/navigation/island_navmesh.tres" id="7_navmesh"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/levy_spearman.tscn" id="8_spearman"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.29, 0.38, 0.5, 1)
@@ -39,11 +41,17 @@ light_energy = 1.1
 shadow_enabled = true
 directional_shadow_max_distance = 180.0
 
-[node name="Terrain" parent="." instance=ExtResource("3_terrain")]
+; Everything walkable lives under here. bake_navigation_mesh() parses the
+; region's own children, so a world scene outside it bakes to nothing.
+; Re-bake with: godot --headless --script tools/bake_navmesh.gd
+[node name="Navigation" type="NavigationRegion3D" parent="."]
+navigation_mesh = ExtResource("7_navmesh")
 
-[node name="Monastery" parent="." instance=ExtResource("4_monastery")]
+[node name="Terrain" parent="Navigation" instance=ExtResource("3_terrain")]
 
-[node name="Longship" parent="." instance=ExtResource("5_longship")]
+[node name="Monastery" parent="Navigation" instance=ExtResource("4_monastery")]
+
+[node name="Longship" parent="Navigation" instance=ExtResource("5_longship")]
 
 ; Beached, west of the longship hull, facing north up the island toward the gate.
 [node name="Player" parent="." instance=ExtResource("1_player")]
@@ -60,6 +68,17 @@ enabled = false
 
 [node name="DummyAggressive" parent="." instance=ExtResource("6_dummy")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.2, 34)
+
+; In the courtyard, east of the church door. Far enough from the gate that you
+; have to walk in and be seen, and behind enough geometry that reaching you
+; means actually pathing rather than walking a straight line.
+[node name="LevySpearman" parent="." instance=ExtResource("8_spearman")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0.2, -6)
+
+; Turned to watch the gate (+Z). Rotate the Visual, never the body: the body
+; stays world-aligned so hitboxes and facing maths share one frame.
+[node name="Visual" parent="LevySpearman"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)
 
 [node name="DebugHud" type="CanvasLayer" parent="." node_paths=PackedStringArray("player")]
 script = ExtResource("2_hud")

@@ -15,6 +15,7 @@
 ##   release <action>        release it
 ##   tap <action> <seconds>  press, wait, release
 ##   tp <x> <y> <z>          teleport the player, zero its velocity
+##   tpnear <name> <metres>  stand that far from a named enemy, facing it
 ##   yaw <degrees>           set camera rig yaw directly
 ##   pitch <degrees>         set spring-arm pitch directly
 ##   mouse <dx> <dy>         inject real mouse motion through camera_rig.gd
@@ -150,6 +151,8 @@ func _exec(statement: String) -> void:
 			_rig.rotation.y = deg_to_rad(float(parts[1]))
 		"pitch":
 			_arm.rotation.x = deg_to_rad(float(parts[1]))
+		"tpnear":
+			_teleport_near(parts[1], float(parts[2]))
 		"mouse":
 			await _mouse(float(parts[1]), float(parts[2]))
 		"note":
@@ -162,6 +165,32 @@ func _exec(statement: String) -> void:
 			return
 
 	_record(statement)
+
+
+## Put the player `distance` metres from the first enemy whose name contains
+## `fragment`, facing it. Hardcoded coordinates go stale the moment an enemy
+## can walk, which is every enemy from stage 4 on.
+func _teleport_near(fragment: String, distance: float) -> void:
+	var foe: Node3D = null
+	for enemy in get_tree().get_nodes_in_group("enemy"):
+		if fragment.to_lower() in str(enemy.name).to_lower():
+			foe = enemy
+			break
+	if foe == null:
+		push_error("driver: no enemy matching '%s'" % fragment)
+		_failed = true
+		return
+
+	var spot := foe.global_position + Vector3(0.0, 0.4, distance)
+	_player.global_position = spot
+	_player.velocity = Vector3.ZERO
+
+	# Aim the camera at it too, since the player's swing follows camera yaw.
+	if _rig != null:
+		var to_foe := foe.global_position - spot
+		to_foe.y = 0.0
+		if to_foe.length_squared() > 0.0001:
+			_rig.rotation.y = atan2(-to_foe.x, -to_foe.z)
 
 
 func _wait(seconds: float) -> void:
@@ -260,7 +289,9 @@ func _state() -> Dictionary:
 	for enemy in get_tree().get_nodes_in_group("enemy"):
 		var enemy_health := enemy.get_node_or_null("Health")
 		var enemy_pos: Vector3 = enemy.global_position
+		var enemy_machine := enemy.get_node_or_null("StateMachine")
 		foes.append({
+			"state": str(enemy_machine.state_name()) if enemy_machine != null else "-",
 			"name": str(enemy.name),
 			"hp": snappedf(enemy_health.current, 0.1) if enemy_health != null else -1.0,
 			"pos": [snappedf(enemy_pos.x, 0.01), snappedf(enemy_pos.y, 0.01), snappedf(enemy_pos.z, 0.01)],
