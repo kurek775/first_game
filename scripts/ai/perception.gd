@@ -42,6 +42,10 @@ func _physics_process(_delta: float) -> void:
 	_visible = now
 	if now:
 		target_spotted.emit(target)
+		# Also announce globally: the alarm bell has no way to find every pair
+		# of eyes on the island, and should not have to.
+		if target_group == "player":
+			Events.player_spotted.emit(target)
 	else:
 		target_lost.emit()
 

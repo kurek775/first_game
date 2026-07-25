@@ -18,4 +18,5 @@ func enter() -> void:
 	actor.set_collision_layer_value(3, false)
 
 	actor.perception.set_physics_process(false)
+	Events.enemy_killed.emit(actor)
 	actor.visual.rotation.z = deg_to_rad(topple_degrees)

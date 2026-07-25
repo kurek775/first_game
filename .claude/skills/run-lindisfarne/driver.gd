@@ -19,6 +19,8 @@
 ##   yaw <degrees>           set camera rig yaw directly
 ##   pitch <degrees>         set spring-arm pitch directly
 ##   mouse <dx> <dy>         inject real mouse motion through camera_rig.gd
+##   set <node> <prop> <v>   override an exported value at runtime
+##   alarm                   ring the alarm bell now
 ##   note <text>             label the next log entry
 ##
 ## Input actions available to press/release/tap:
@@ -153,6 +155,10 @@ func _exec(statement: String) -> void:
 			_rig.rotation.y = deg_to_rad(float(parts[1]))
 		"pitch":
 			_arm.rotation.x = deg_to_rad(float(parts[1]))
+		"set":
+			_set_property(parts[1], parts[2], parts[3])
+		"alarm":
+			_ring_alarm()
 		"tpnear":
 			_teleport_near(parts[1], float(parts[2]))
 		"mouse":
@@ -193,6 +199,26 @@ func _teleport_near(fragment: String, distance: float) -> void:
 		to_foe.y = 0.0
 		if to_foe.length_squared() > 0.0001:
 			_rig.rotation.y = atan2(-to_foe.x, -to_foe.z)
+
+
+## Override an exported value at runtime, so a test does not have to wait the
+## shipping 14s + 34s + 28s... for wave 3 to prove escalation works.
+func _set_property(node_name: String, property: String, raw: String) -> void:
+	var node := _game.find_child(node_name, true, false)
+	if node == null:
+		push_error("driver: no node named '%s'" % node_name)
+		_failed = true
+		return
+	node.set(property, float(raw) if raw.is_valid_float() else raw)
+
+
+func _ring_alarm() -> void:
+	var bell := _game.find_child("AlarmBell", true, false)
+	if bell == null:
+		push_error("driver: no AlarmBell in the scene")
+		_failed = true
+		return
+	bell.ring()
 
 
 func _wait(seconds: float) -> void:
@@ -306,6 +332,16 @@ func _state() -> Dictionary:
 		})
 	if not foes.is_empty():
 		state["foes"] = foes
+
+	# The run globals: clock, tally, and whether the island knows you are here.
+	state["clock"] = snappedf(Run.time_remaining, 0.1)
+	state["kills"] = Run.kills
+	state["alarm"] = Run.alarm_raised
+	state["rider_away"] = Run.rider_escaped
+	var director := _game.find_child("MusterDirector", true, false)
+	if director != null:
+		state["wave"] = director.wave
+		state["levy_alive"] = director.alive_count()
 
 	if _hud_label != null:
 		state["hud"] = _hud_label.text.replace("\n", " | ")

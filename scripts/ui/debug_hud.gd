@@ -16,6 +16,8 @@ extends CanvasLayer
 
 @onready var _label: Label = $Panel/Label
 
+var _director: MusterDirector
+
 var _last_event := "-"
 
 
@@ -24,6 +26,13 @@ func _ready() -> void:
 		_label.text = "DebugHud: no player assigned"
 		set_process(false)
 		return
+
+	_director = get_tree().current_scene.find_child("MusterDirector", true, false) as MusterDirector
+
+	Events.alarm_raised.connect(func(_w: Vector3) -> void: _last_event = "ALARM RAISED")
+	Events.wave_spawned.connect(func(i: int, n: int) -> void: _last_event = "wave %d: %d levy" % [i, n])
+	Events.rider_escaped.connect(func() -> void: _last_event = "rider escaped! -90s")
+	Events.enemy_killed.connect(func(e: Node3D) -> void: _last_event = "killed %s" % e.name)
 
 	player.sprint_changed.connect(_on_sprint_changed)
 	player.landed.connect(_on_landed)
@@ -55,11 +64,22 @@ func _process(_delta: float) -> void:
 			"" if player.carrier.has_free_hands() else "  HANDS FULL",
 		],
 		"state     %s" % _state_name(),
+		"clock     %s%s" % [_clock(), "  ALARM" if Run.alarm_raised else ""],
+		"muster    wave %d · %d kills%s" % [
+			_director.wave if _director != null else 0,
+			Run.kills,
+			"  RIDER AWAY" if Run.rider_escaped else "",
+		],
 		"last      %s" % _last_event,
 		"",
 		"WASD · Shift sprint · LMB attack · RMB block",
 		"E take · G drop · Esc mouse",
 	])
+
+
+func _clock() -> String:
+	var t := Run.time_remaining
+	return "%d:%02d" % [int(t) / 60, int(t) % 60]
 
 
 func _phase_name() -> String:

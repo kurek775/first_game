@@ -45,6 +45,9 @@ scripts/
                          hit_reaction, hit_info
   ai/                    state_machine.gd, state.gd, perception.gd, states/
   enemies/               enemy.gd, dummy_brain.gd
+  loot/                  loot_item.gd, carrier.gd
+  muster/                alarm_bell.gd, muster_director.gd
+  globals/               event_bus.gd (Events), run_state.gd (Run)
   ui/                    debug_hud.gd, health_label.gd
 resources/
   materials/             flat greybox colours
@@ -69,6 +72,12 @@ disguise.
 **Each component reduces only what it applies.** `Blocker` owns the damage
 reduction because it decides a block happened; `HitReaction` owns the knockback
 reduction because it applies knockback. Neither has to ask the other anything.
+
+**Two autoloads, and only two.** `Events` is a global signal bus and `Run`
+holds the clock and tally. Everything else uses direct `@export` node links,
+which is right for things in the same scene. The muster is the first system
+where the sender genuinely cannot know the receiver — a spearman's eyes do not
+know a bell exists — and that is the bar for putting something on the bus.
 
 **Signals point outward, references point down.** Components announce what
 happened (`sprint_changed`, `landed`, `hit_taken`, `died`) and never reach up
@@ -95,7 +104,7 @@ simpler; this shape is a bet on more enemy types.
 | 3 | Melee, blocking, health, knockback | done |
 | 4 | Enemy: navmesh pathing + state machine | done |
 | 5 | Loot with weight | done |
-| 6 | The muster: alarm, waves, the rider | |
+| 6 | The muster: alarm, waves, the rider | done |
 | 7 | Extraction and run summary | |
 | 8 | Juice pass | |
 
@@ -109,6 +118,8 @@ checked with numbers rather than by squinting at the window:
 DISPLAY=:0 .claude/skills/run-lindisfarne/smoke.sh    # traversal
 DISPLAY=:0 .claude/skills/run-lindisfarne/combat.sh   # damage, blocking, arc
 DISPLAY=:0 .claude/skills/run-lindisfarne/ai.sh       # the state machine
+DISPLAY=:0 .claude/skills/run-lindisfarne/loot.sh     # weight, speed, attack gate
+DISPLAY=:0 .claude/skills/run-lindisfarne/muster.sh   # alarm, waves, the rider
 ```
 
 ## Things that will bite you
