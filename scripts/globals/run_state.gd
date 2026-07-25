@@ -23,6 +23,7 @@ func _ready() -> void:
 	Events.enemy_killed.connect(func(_e: Node3D) -> void: kills += 1)
 	Events.alarm_raised.connect(func(_w: Vector3) -> void: alarm_raised = true)
 	Events.rider_escaped.connect(_on_rider_escaped)
+	Events.player_died.connect(func() -> void: finish("killed"))
 
 
 func _process(delta: float) -> void:

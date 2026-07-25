@@ -4,7 +4,7 @@
 ;
 ; Stage 1's flat plane and obstacle course lived here and are now gone -- the
 ; monastery ramp/stairs and the low wall cover the same movement tests.
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="2_hud"]
@@ -19,6 +19,7 @@
 [ext_resource type="Script" path="res://scripts/muster/muster_director.gd" id="11_director"]
 [ext_resource type="Script" path="res://scripts/muster/alarm_bell.gd" id="12_bell"]
 [ext_resource type="Material" path="res://resources/materials/silver.tres" id="13_silver"]
+[ext_resource type="Script" path="res://scripts/ui/run_summary.gd" id="14_summary"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.29, 0.38, 0.5, 1)
@@ -226,3 +227,38 @@ offset_left = 12.0
 offset_top = 10.0
 offset_right = 272.0
 offset_bottom = 180.0
+
+; process_mode 3 = ALWAYS. Ending the run pauses the tree, and a paused screen
+; cannot read the key that restarts it.
+[node name="RunSummary" type="CanvasLayer" parent="."]
+process_mode = 3
+layer = 2
+script = ExtResource("14_summary")
+
+[node name="Panel" type="Panel" parent="RunSummary"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -170.0
+offset_right = 260.0
+offset_bottom = 170.0
+
+[node name="Title" type="Label" parent="RunSummary/Panel"]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 26.0
+offset_right = 492.0
+offset_bottom = 66.0
+theme_override_font_sizes/font_size = 28
+text = "AWAY CLEAN"
+
+[node name="Body" type="Label" parent="RunSummary/Panel"]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 86.0
+offset_right = 492.0
+offset_bottom = 330.0
+theme_override_font_sizes/font_size = 18

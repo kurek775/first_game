@@ -335,6 +335,8 @@ func _state() -> Dictionary:
 
 	# The run globals: clock, tally, and whether the island knows you are here.
 	state["clock"] = snappedf(Run.time_remaining, 0.1)
+	state["run_over"] = Run.finished
+	state["paused"] = get_tree().paused
 	state["kills"] = Run.kills
 	state["alarm"] = Run.alarm_raised
 	state["rider_away"] = Run.rider_escaped

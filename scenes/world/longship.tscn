@@ -1,10 +1,11 @@
-; The longship, beached bow-in on the sand. Extraction point for stage 7 --
-; when that lands, an Area3D goes here and the run-summary listens to it.
-; For now it is geometry you can climb onto: hull deck is at y = 1.6.
-[gd_scene load_steps=9 format=3]
+; The longship, beached bow-in on the sand. Deck is at y = 1.6.
+; The ExtractionZone at the bottom is the win condition: step onto the deck
+; alive and the run ends.
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Material" path="res://resources/materials/wood.tres" id="1_wood"]
 [ext_resource type="Material" path="res://resources/materials/accent.tres" id="2_accent"]
+[ext_resource type="Script" path="res://scripts/extraction/extraction_zone.gd" id="3_extract"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_hull"]
 material = ExtResource("1_wood")
@@ -29,6 +30,9 @@ height = 9.0
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_mast"]
 height = 9.0
 radius = 0.25
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_deck"]
+size = Vector3(5, 3, 19)
 
 [sub_resource type="BoxMesh" id="BoxMesh_shield"]
 material = ExtResource("2_accent")
@@ -91,3 +95,13 @@ mesh = SubResource("BoxMesh_shield")
 [node name="ShieldF" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.05, 1.2, 43)
 mesh = SubResource("BoxMesh_shield")
+
+; Stepping onto the deck alive ends the run. Masks layer 2 (player) only.
+[node name="ExtractionZone" type="Area3D" parent="." groups=["extraction"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.6, 38)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("3_extract")
+
+[node name="Collision" type="CollisionShape3D" parent="ExtractionZone"]
+shape = SubResource("BoxShape3D_deck")

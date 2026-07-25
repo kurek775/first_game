@@ -33,7 +33,10 @@ signal died
 func _ready() -> void:
 	motor.sprint_changed.connect(func(s: bool) -> void: sprint_changed.emit(s))
 	motor.landed.connect(func(speed: float) -> void: landed.emit(speed))
-	health.died.connect(func() -> void: died.emit())
+	health.died.connect(func() -> void:
+		died.emit()
+		Events.player_died.emit()
+	)
 	# The rig reports the condition; deciding that "hide the body" is the answer
 	# is the player's business, not the camera's.
 	camera_rig.occluded_changed.connect(func(occluded: bool) -> void: visual.visible = not occluded)

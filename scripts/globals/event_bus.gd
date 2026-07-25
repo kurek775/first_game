@@ -20,3 +20,5 @@ signal wave_spawned(index: int, count: int)
 ## The rider got off the island. The levy now knows exactly where you are.
 signal rider_escaped
 signal enemy_killed(enemy: Node3D)
+## The raider went down.
+signal player_died

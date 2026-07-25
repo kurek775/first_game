@@ -28,6 +28,8 @@ defaults `DISPLAY` to `:0` when unset.
 | Mouse | look |
 | `LMB` | attack |
 | `RMB` | raise guard |
+| `E` / `G` | take loot / drop the last thing you took |
+| `Enter` | raid again, on the summary screen |
 | `Esc` | release the mouse cursor |
 
 ## Layout
@@ -47,6 +49,7 @@ scripts/
   enemies/               enemy.gd, dummy_brain.gd
   loot/                  loot_item.gd, carrier.gd
   muster/                alarm_bell.gd, muster_director.gd
+  extraction/            extraction_zone.gd
   globals/               event_bus.gd (Events), run_state.gd (Run)
   ui/                    debug_hud.gd, health_label.gd
 resources/
@@ -105,7 +108,7 @@ simpler; this shape is a bet on more enemy types.
 | 4 | Enemy: navmesh pathing + state machine | done |
 | 5 | Loot with weight | done |
 | 6 | The muster: alarm, waves, the rider | done |
-| 7 | Extraction and run summary | |
+| 7 | Extraction and run summary | done |
 | 8 | Juice pass | |
 
 ## Testing
@@ -120,6 +123,7 @@ DISPLAY=:0 .claude/skills/run-lindisfarne/combat.sh   # damage, blocking, arc
 DISPLAY=:0 .claude/skills/run-lindisfarne/ai.sh       # the state machine
 DISPLAY=:0 .claude/skills/run-lindisfarne/loot.sh     # weight, speed, attack gate
 DISPLAY=:0 .claude/skills/run-lindisfarne/muster.sh   # alarm, waves, the rider
+DISPLAY=:0 .claude/skills/run-lindisfarne/extraction.sh  # win and death paths
 ```
 
 ## Things that will bite you
