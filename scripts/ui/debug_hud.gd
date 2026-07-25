@@ -32,6 +32,12 @@ func _ready() -> void:
 	player.health.damaged.connect(_on_damaged)
 	player.blocker.blocked.connect(func(_hit: HitInfo) -> void: _last_event = "blocked!")
 	player.attack.swing_landed.connect(_on_swing_landed)
+	player.carrier.picked_up.connect(
+		func(item: LootItem) -> void: _last_event = "took %s (%.0fkg)" % [item.item_name, item.weight]
+	)
+	player.carrier.dropped.connect(
+		func(item: LootItem) -> void: _last_event = "dropped %s" % item.item_name
+	)
 	player.reaction.stagger_started.connect(
 		func(duration: float) -> void: _last_event = "staggered %.2fs" % duration
 	)
@@ -43,10 +49,16 @@ func _process(_delta: float) -> void:
 		"speed     %5.2f m/s" % player.motor.get_ground_speed(),
 		"attack    %s" % _phase_name(),
 		"guard     %s" % ("UP" if player.blocker.is_blocking() else "down"),
+		"load      %.0f kg · %d silver%s" % [
+			player.carrier.total_weight(),
+			player.carrier.total_value(),
+			"" if player.carrier.has_free_hands() else "  HANDS FULL",
+		],
 		"state     %s" % _state_name(),
 		"last      %s" % _last_event,
 		"",
-		"WASD move · Shift sprint · LMB attack · RMB block · Esc mouse",
+		"WASD · Shift sprint · LMB attack · RMB block",
+		"E take · G drop · Esc mouse",
 	])
 
 

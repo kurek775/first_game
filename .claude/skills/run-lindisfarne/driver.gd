@@ -45,6 +45,7 @@ var _hud_label: Label
 var _health: Node
 var _blocker: Node
 var _attack: Node
+var _carrier: Node
 
 var _held: Array[String] = []
 var _entries: Array = []
@@ -105,6 +106,7 @@ func _bind_nodes() -> bool:
 	_health = _player.get_node_or_null("Health")
 	_blocker = _player.get_node_or_null("Blocker")
 	_attack = _player.get_node_or_null("MeleeAttack")
+	_carrier = _player.get_node_or_null("Carrier")
 	return true
 
 
@@ -282,6 +284,11 @@ func _state() -> Dictionary:
 		state["guard"] = _blocker.is_blocking()
 	if _attack != null:
 		state["atk"] = ATTACK_PHASE_NAMES[_attack.phase]
+	if _carrier != null:
+		state["load_kg"] = snappedf(_carrier.total_weight(), 0.1)
+		state["load_value"] = _carrier.total_value()
+		state["hands_free"] = _carrier.has_free_hands()
+		state["carrying"] = _carrier.carried.size()
 
 	# Every enemy's health, so combat can be checked numerically instead of by
 	# squinting at screenshots.

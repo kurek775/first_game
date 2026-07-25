@@ -27,6 +27,7 @@ signal died
 @onready var blocker: Blocker = $Blocker
 @onready var attack: MeleeAttack = $MeleeAttack
 @onready var reaction: HitReaction = $HitReaction
+@onready var carrier: Carrier = $Carrier
 
 
 func _ready() -> void:
@@ -57,15 +58,22 @@ func _physics_process(delta: float) -> void:
 	# Guard drops the instant you commit to a swing — you cannot do both.
 	blocker.set_blocking(Input.is_action_pressed("block") and not attack.is_swinging())
 
-	if Input.is_action_just_pressed("attack"):
+	# Both arms full of reliquary means no swing. Dropping the haul to fight is
+	# the decision the whole loot system exists to force.
+	if Input.is_action_just_pressed("attack") and carrier.has_free_hands():
 		attack.try_swing()
+
+	if Input.is_action_just_pressed("interact"):
+		carrier.try_pick_up()
+	if Input.is_action_just_pressed("drop"):
+		carrier.drop_last()
 
 	motor.wants_sprint = (
 		Input.is_action_pressed("sprint")
 		and not blocker.is_blocking()
 		and not attack.is_swinging()
 	)
-	motor.speed_scale = _speed_scale()
+	motor.speed_scale = _speed_scale() * carrier.speed_scale()
 
 	_face(delta)
 

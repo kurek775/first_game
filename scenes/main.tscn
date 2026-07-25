@@ -4,7 +4,7 @@
 ;
 ; Stage 1's flat plane and obstacle course lived here and are now gone -- the
 ; monastery ramp/stairs and the low wall cover the same movement tests.
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="2_hud"]
@@ -14,6 +14,7 @@
 [ext_resource type="PackedScene" path="res://scenes/enemies/training_dummy.tscn" id="6_dummy"]
 [ext_resource type="NavigationMesh" path="res://resources/navigation/island_navmesh.tres" id="7_navmesh"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/levy_spearman.tscn" id="8_spearman"]
+[ext_resource type="PackedScene" path="res://scenes/loot/loot_item.tscn" id="9_loot"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.29, 0.38, 0.5, 1)
@@ -79,6 +80,59 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0.2, -6)
 ; stays world-aligned so hitboxes and facing maths share one frame.
 [node name="Visual" parent="LevySpearman"]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)
+
+
+; Loot. Deliberately graded so value tracks weight: the richest haul is also
+; the one that stops you fighting and is furthest from the boat.
+;   candlestick  6kg  /  70   nave, light enough to still swing
+;   psalter      9kg  / 110   nave
+;   plate       16kg  / 180   side building, past the two-hand limit
+;   reliquary   34kg  / 340   on the altar
+;   hoard       58kg  / 620   crypt floor, deepest and heaviest
+[node name="LootCandlestick" parent="." instance=ExtResource("9_loot")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.35, -18)
+item_name = "Candlestick"
+weight = 6.0
+value = 70
+
+[node name="Mesh" parent="LootCandlestick"]
+transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 0, 0, 0)
+
+[node name="LootPsalter" parent="." instance=ExtResource("9_loot")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0.35, -26)
+item_name = "Psalter"
+weight = 9.0
+value = 110
+
+[node name="Mesh" parent="LootPsalter"]
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 0, 0, 0)
+
+[node name="LootPlate" parent="." instance=ExtResource("9_loot")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23, 0.35, -22)
+item_name = "Silver plate"
+weight = 16.0
+value = 180
+
+[node name="Mesh" parent="LootPlate"]
+transform = Transform3D(1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0, 0, 0, 0)
+
+[node name="LootReliquary" parent="." instance=ExtResource("9_loot")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -32)
+item_name = "Reliquary"
+weight = 34.0
+value = 340
+
+[node name="Mesh" parent="LootReliquary"]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 0, 0, 0)
+
+[node name="LootHoard" parent="." instance=ExtResource("9_loot")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, -4.15, -16)
+item_name = "Gold hoard"
+weight = 58.0
+value = 620
+
+[node name="Mesh" parent="LootHoard"]
+transform = Transform3D(1.6, 0, 0, 0, 1.6, 0, 0, 0, 1.6, 0, 0, 0)
 
 [node name="DebugHud" type="CanvasLayer" parent="." node_paths=PackedStringArray("player")]
 script = ExtResource("2_hud")

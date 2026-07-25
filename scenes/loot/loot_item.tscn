@@ -1,0 +1,31 @@
+; A single stealable thing. Instanced with overrides for weight/value/size --
+; see main.tscn for the five placed around the monastery.
+;
+; Layer 5 ("interactable"), masks nothing: loot never looks for anything, the
+; carrier's reach volume looks for loot.
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/loot/loot_item.gd" id="1_loot"]
+[ext_resource type="Material" path="res://resources/materials/gold.tres" id="2_gold"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_loot"]
+size = Vector3(0.5, 0.4, 0.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_loot"]
+material = ExtResource("2_gold")
+size = Vector3(0.5, 0.4, 0.5)
+
+[node name="LootItem" type="Area3D" groups=["loot"]]
+collision_layer = 16
+collision_mask = 0
+monitoring = false
+script = ExtResource("1_loot")
+item_name = "Loot"
+weight = 10.0
+value = 50
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_loot")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_loot")

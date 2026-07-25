@@ -94,7 +94,7 @@ simpler; this shape is a bet on more enemy types.
 | 2 | Greybox monastery, beach, longship | done |
 | 3 | Melee, blocking, health, knockback | done |
 | 4 | Enemy: navmesh pathing + state machine | done |
-| 5 | Loot with weight | |
+| 5 | Loot with weight | done |
 | 6 | The muster: alarm, waves, the rider | |
 | 7 | Extraction and run summary | |
 | 8 | Juice pass | |
