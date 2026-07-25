@@ -51,6 +51,7 @@ scripts/
   muster/                alarm_bell.gd, muster_director.gd
   extraction/            extraction_zone.gd
   globals/               event_bus.gd (Events), run_state.gd (Run)
+  juice/                 juice.gd (Juice), camera_shake.gd, damage_flash.gd
   ui/                    debug_hud.gd, health_label.gd
 resources/
   materials/             flat greybox colours
@@ -76,8 +77,8 @@ disguise.
 reduction because it decides a block happened; `HitReaction` owns the knockback
 reduction because it applies knockback. Neither has to ask the other anything.
 
-**Two autoloads, and only two.** `Events` is a global signal bus and `Run`
-holds the clock and tally. Everything else uses direct `@export` node links,
+**Three autoloads, and only three.** `Events` is a global signal bus, `Run`
+holds the clock and tally, and `Juice` owns hit-stop and shake requests. Everything else uses direct `@export` node links,
 which is right for things in the same scene. The muster is the first system
 where the sender genuinely cannot know the receiver — a spearman's eyes do not
 know a bell exists — and that is the bar for putting something on the bus.
@@ -109,7 +110,7 @@ simpler; this shape is a bet on more enemy types.
 | 5 | Loot with weight | done |
 | 6 | The muster: alarm, waves, the rider | done |
 | 7 | Extraction and run summary | done |
-| 8 | Juice pass | |
+| 8 | Juice pass | done |
 
 ## Testing
 
@@ -147,5 +148,10 @@ DISPLAY=:0 .claude/skills/run-lindisfarne/extraction.sh  # win and death paths
 - **`_ready` propagates children-first.** A child's `_ready` runs before its
   parent's, so the parent's `@onready` vars are still null — which is why
   `StateMachine` has an explicit `start()`.
+- **`Input.action_press()` never produces an `InputEvent`.** An
+  `_unhandled_input` handler cannot see programmatic input at all, and
+  `Input.is_action_just_pressed()` is unreliable for it too — it compares
+  against the engine's process-frame counter, so the key reads as held forever
+  but never as just-pressed. Poll and track the rising edge by hand.
 - **Navigation queries do not work under `godot --script`.** They return zero
   even with a good navmesh. Verify pathing by driving the real game.

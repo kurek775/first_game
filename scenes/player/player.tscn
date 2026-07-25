@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/motion/character_motor.gd" id="2_motor"]
@@ -12,6 +12,7 @@
 [ext_resource type="Script" path="res://scripts/combat/melee_attack.gd" id="10_melee"]
 [ext_resource type="Script" path="res://scripts/combat/hit_reaction.gd" id="11_reaction"]
 [ext_resource type="Script" path="res://scripts/loot/carrier.gd" id="12_carrier"]
+[ext_resource type="Script" path="res://scripts/juice/camera_shake.gd" id="13_shake"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -98,6 +99,15 @@ margin = 0.1
 [node name="Camera3D" type="Camera3D" parent="CameraRig/SpringArm3D"]
 current = true
 fov = 70.0
+
+; Shakes the camera INSIDE the arm, so the arm's collision sweep still runs
+; along the true direction and the camera cannot jitter through a wall.
+[node name="CameraShake" type="Node" parent="CameraRig" node_paths=PackedStringArray("camera")]
+script = ExtResource("13_shake")
+camera = NodePath("../SpringArm3D/Camera3D")
+decay = 6.5
+max_offset = 0.32
+max_roll_deg = 2.5
 
 [node name="Health" type="Node" parent="."]
 script = ExtResource("6_health")

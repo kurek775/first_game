@@ -336,6 +336,11 @@ func _state() -> Dictionary:
 	# The run globals: clock, tally, and whether the island knows you are here.
 	state["clock"] = snappedf(Run.time_remaining, 0.1)
 	state["run_over"] = Run.finished
+	state["time_scale"] = snappedf(Engine.time_scale, 0.001)
+	var flash := _game.find_child("Flash", true, false) as ColorRect
+	if flash != null:
+		state["flash_a"] = snappedf(flash.color.a, 0.01)
+		state["flash_visible"] = flash.visible and flash.size.x > 0
 	state["paused"] = get_tree().paused
 	state["kills"] = Run.kills
 	state["alarm"] = Run.alarm_raised

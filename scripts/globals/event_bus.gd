@@ -19,6 +19,9 @@ signal alarm_raised(where: Vector3)
 signal wave_spawned(index: int, count: int)
 ## The rider got off the island. The levy now knows exactly where you are.
 signal rider_escaped
+## A blow connected somewhere in the world. Carries enough for feedback to
+## react without anyone having to know who hit whom.
+signal impact(where: Vector3, damage: float, blocked: bool, on_player: bool)
 signal enemy_killed(enemy: Node3D)
 ## The raider went down.
 signal player_died

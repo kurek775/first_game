@@ -23,6 +23,7 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 
 Events="*res://scripts/globals/event_bus.gd"
 Run="*res://scripts/globals/run_state.gd"
+Juice="*res://scripts/juice/juice.gd"
 
 [display]
 

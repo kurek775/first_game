@@ -4,7 +4,7 @@
 ;
 ; Stage 1's flat plane and obstacle course lived here and are now gone -- the
 ; monastery ramp/stairs and the low wall cover the same movement tests.
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="2_hud"]
@@ -20,6 +20,7 @@
 [ext_resource type="Script" path="res://scripts/muster/alarm_bell.gd" id="12_bell"]
 [ext_resource type="Material" path="res://resources/materials/silver.tres" id="13_silver"]
 [ext_resource type="Script" path="res://scripts/ui/run_summary.gd" id="14_summary"]
+[ext_resource type="Script" path="res://scripts/juice/damage_flash.gd" id="15_flash"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.29, 0.38, 0.5, 1)
@@ -262,3 +263,15 @@ offset_top = 86.0
 offset_right = 492.0
 offset_bottom = 330.0
 theme_override_font_sizes/font_size = 18
+
+; Below the summary (layer 1 vs 2) so the end screen is never tinted red.
+[node name="DamageFlash" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="Flash" type="ColorRect" parent="DamageFlash"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.72, 0.06, 0.06, 0)
+script = ExtResource("15_flash")
