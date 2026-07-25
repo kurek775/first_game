@@ -1,0 +1,120 @@
+; Island terrain. Top of every walkable slab is exactly y = 0.
+;
+; The grass is FOUR slabs rather than one, because the crypt stairwell needs a
+; genuine hole in the ground at x 6..12, z -4..6. A single ground box would
+; have to be cut, and there is no boolean subtraction here -- so the hole is
+; made by leaving a gap between slabs.
+;
+;   x -60..60  z -60..-4   G1
+;   x -60..6   z  -4..6    G2      <- gap between G2 and G3 is the stairwell
+;   x  12..60  z  -4..6    G3
+;   x -60..60  z   6..30   G4
+;   x -60..60  z  30..46   Beach
+;
+; Seabed sits at y = -6, below the crypt floor (-5.5), so running off the
+; island drops you into the shallows instead of falling forever.
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Material" path="res://resources/materials/ground.tres" id="1_grass"]
+[ext_resource type="Material" path="res://resources/materials/sand.tres" id="2_sand"]
+[ext_resource type="Material" path="res://resources/materials/sea.tres" id="3_sea"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_sea"]
+material = ExtResource("3_sea")
+size = Vector2(400, 400)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_seabed"]
+size = Vector3(400, 4, 400)
+
+[sub_resource type="BoxMesh" id="BoxMesh_g1"]
+material = ExtResource("1_grass")
+size = Vector3(120, 1, 56)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_g1"]
+size = Vector3(120, 1, 56)
+
+[sub_resource type="BoxMesh" id="BoxMesh_g2"]
+material = ExtResource("1_grass")
+size = Vector3(66, 1, 10)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_g2"]
+size = Vector3(66, 1, 10)
+
+[sub_resource type="BoxMesh" id="BoxMesh_g3"]
+material = ExtResource("1_grass")
+size = Vector3(48, 1, 10)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_g3"]
+size = Vector3(48, 1, 10)
+
+[sub_resource type="BoxMesh" id="BoxMesh_g4"]
+material = ExtResource("1_grass")
+size = Vector3(120, 1, 24)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_g4"]
+size = Vector3(120, 1, 24)
+
+[sub_resource type="BoxMesh" id="BoxMesh_beach"]
+material = ExtResource("2_sand")
+size = Vector3(120, 1, 16)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_beach"]
+size = Vector3(120, 1, 16)
+
+[node name="Terrain" type="Node3D"]
+
+[node name="Sea" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.8, 0)
+mesh = SubResource("PlaneMesh_sea")
+
+[node name="Seabed" type="StaticBody3D" parent="."]
+
+[node name="Collision" type="CollisionShape3D" parent="Seabed"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -8, 0)
+shape = SubResource("BoxShape3D_seabed")
+
+; One body, many shapes: a StaticBody3D can own any number of CollisionShape3D
+; children, so the whole grass field is a single physics body.
+[node name="Grass" type="StaticBody3D" parent="."]
+
+[node name="ShapeG1" type="CollisionShape3D" parent="Grass"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, -32)
+shape = SubResource("BoxShape3D_g1")
+
+[node name="MeshG1" type="MeshInstance3D" parent="Grass"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, -32)
+mesh = SubResource("BoxMesh_g1")
+
+[node name="ShapeG2" type="CollisionShape3D" parent="Grass"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27, -0.5, 1)
+shape = SubResource("BoxShape3D_g2")
+
+[node name="MeshG2" type="MeshInstance3D" parent="Grass"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27, -0.5, 1)
+mesh = SubResource("BoxMesh_g2")
+
+[node name="ShapeG3" type="CollisionShape3D" parent="Grass"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36, -0.5, 1)
+shape = SubResource("BoxShape3D_g3")
+
+[node name="MeshG3" type="MeshInstance3D" parent="Grass"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36, -0.5, 1)
+mesh = SubResource("BoxMesh_g3")
+
+[node name="ShapeG4" type="CollisionShape3D" parent="Grass"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 18)
+shape = SubResource("BoxShape3D_g4")
+
+[node name="MeshG4" type="MeshInstance3D" parent="Grass"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 18)
+mesh = SubResource("BoxMesh_g4")
+
+[node name="Beach" type="StaticBody3D" parent="."]
+
+[node name="Collision" type="CollisionShape3D" parent="Beach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 38)
+shape = SubResource("BoxShape3D_beach")
+
+[node name="Mesh" type="MeshInstance3D" parent="Beach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 38)
+mesh = SubResource("BoxMesh_beach")

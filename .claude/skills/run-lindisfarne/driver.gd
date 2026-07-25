@@ -132,7 +132,9 @@ func _exec(statement: String) -> void:
 		"mouse":
 			await _mouse(float(parts[1]), float(parts[2]))
 		"note":
+			# Return without recording, or this entry eats its own note.
 			_note = " ".join(parts.slice(1))
+			return
 		_:
 			push_error("driver: unknown command '%s'" % cmd)
 			_failed = true
@@ -231,7 +233,10 @@ func _record(statement: String) -> void:
 	entry["cmd"] = statement
 	if not _note.is_empty():
 		entry["note"] = _note
-		_note = ""
+		# A note labels everything up to and including the next screenshot, so
+		# it survives the press/wait commands that lead up to the shot.
+		if statement.begins_with("shot"):
+			_note = ""
 	_entries.append(entry)
 	print("DRIVER %-28s %s" % [statement, JSON.stringify(entry)])
 

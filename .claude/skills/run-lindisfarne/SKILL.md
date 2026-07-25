@@ -45,25 +45,27 @@ fail to load, and the game runs with a frozen character — see Troubleshooting.
 
 ### Canned traversal (start here)
 
-Walks flat ground, sprints up the ramp, crosses the platform, falls off it,
-lands, then jams the camera into a wall:
+Lands on the beach, sprints through the gate, crosses the court into the church
+nave, descends the crypt stairs, then enters the side building:
 
 ```bash
 DISPLAY=:0 .claude/skills/run-lindisfarne/smoke.sh /tmp/lindisfarne-shots
 ```
 
-Writes `01_spawn.png` … `08_look_down.png` plus `log.json`. Read the PNGs.
-Known-good signature for the current greybox:
+Writes `01_beach_spawn.png` … `10_side_inside.png` plus `log.json`. Read the
+PNGs. Known-good signature for the current greybox:
 
 ```
-shot 01_spawn          y=-0.01  ground=True  speed=0.0   arm=5.0   vis=True
-shot 02_walk_flat      y=0.0    ground=True  speed=4.5   arm=5.0   vis=True
-shot 03_on_ramp        y=2.7    ground=True  speed=7.5   arm=5.0   vis=True
-shot 04_on_platform    y=3.43   ground=True  speed=7.5   arm=5.0   vis=True
-shot 05_falling        y=2.09   ground=False speed=4.5   arm=5.0   vis=True
-shot 06_landed         y=0.0    ground=True  speed=0.0   arm=2.21  vis=True
-shot 07_camera_vs_wall y=0.0    ground=True  speed=0.0   arm=1.46  vis=False
-shot 08_look_down      y=0.0    ground=True  speed=0.0   arm=1.66  vis=False
+01_beach_spawn       pos=(  -6.0,  0.00,  42.0) ground=True  speed=0.0
+02_gate              pos=(   0.0,  0.00,  12.9) ground=True  speed=7.5  through the gate
+03_courtyard         pos=(   0.0,  0.00,   0.2) ground=True  speed=7.5  crossing court
+04_church_door       pos=(   0.0,  0.00,  -7.2) ground=True  speed=4.5  church doorway
+05_nave              pos=(   0.0,  0.00, -13.5) ground=True  speed=4.5  inside the nave
+06_stair_top         pos=(   9.0,  0.00,   9.0) ground=True  speed=0.0  stairwell mouth
+07_on_stairs         pos=(   9.0, -1.79,   1.9) ground=True  speed=4.5  on the stairs
+08_crypt             pos=(   9.0, -4.50,  -4.9) ground=True  speed=4.5  underground
+09_side_door         pos=(  12.0,  0.00, -22.0) ground=True  speed=0.0  side building
+10_side_inside       pos=(  18.6,  0.00, -22.0) ground=True  speed=4.5  inside side bldg
 ```
 
 Re-extract that table from any run:
@@ -74,15 +76,43 @@ import json
 d=json.load(open('/tmp/lindisfarne-shots/log.json'))
 for e in d:
     if e['cmd'].startswith('shot'):
-        print('%-22s y=%-6s ground=%-5s speed=%-5s arm=%-5s vis=%s' % (
-            e['cmd'], e['pos'][1], e['grounded'], e['speed'], e['arm_length'], e['visual_visible']))
+        p=e['pos']
+        print('%-20s pos=(%6.1f,%6.2f,%6.1f) ground=%-5s speed=%-4s %s' % (
+            e['cmd'][5:], p[0],p[1],p[2], e['grounded'], e['speed'], e.get('note','')))
 "
 ```
 
-What the columns catch: `speed` pins walk/sprint tuning (4.5 / 7.5),
-`y` pins ramp and platform heights, `ground=False` proves the fall actually
-happened, `arm` proves the SpringArm3D collided, `vis=False` proves the
-occlusion-hide fired.
+What the columns catch: `speed` pins walk/sprint tuning (4.5 / 7.5); the `y`
+progression `0.00 → -1.79 → -4.50` proves the crypt stairs are walkable;
+`ground=True` on every row proves nothing wedges on a doorway, gate or step;
+and the `z` values prove the doorway and gate gaps are actually passable.
+
+### Geometry check without playing
+
+Raycasts every key surface and compares against expected heights — much faster
+than eyeballing screenshots when you move level geometry. Note `collision_mask
+= 1`, or the ray hits the player's own capsule:
+
+```bash
+cat > /tmp/geom.gd <<'EOF'
+extends SceneTree
+func _init():
+    root.add_child(load("res://scenes/main.tscn").instantiate())
+    await physics_frame
+    await physics_frame
+    var space := root.world_3d.direct_space_state
+    for p in [["grass", Vector3(0,40,0), 0.0], ["crypt floor", Vector3(7,-2,-14), -4.5],
+              ["church roof", Vector3(0,40,-23), 7.8], ["gate gap", Vector3(0,40,14.3), 0.0]]:
+        var from: Vector3 = p[1]
+        var q := PhysicsRayQueryParameters3D.create(from, from + Vector3(0,-60,0))
+        q.collision_mask = 1
+        var hit := space.intersect_ray(q)
+        var y: float = hit.position.y if hit else NAN
+        print("%-14s expect %6.2f got %6.2f via %s" % [p[0], p[2], y, hit.collider.name if hit else "-"])
+    quit()
+EOF
+godot --headless --script /tmp/geom.gd
+```
 
 ### Custom scenario
 

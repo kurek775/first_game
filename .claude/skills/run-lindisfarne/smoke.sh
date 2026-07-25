@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Canonical stage-1 traversal: walk, sprint, climb the ramp, cross the
-# platform, fall off it, land, then jam the camera into a wall.
+# Canonical raid traversal: land on the beach, sprint through the gate, into
+# the church nave, down the crypt stairs, then into the side building.
 #
 #   DISPLAY=:0 .claude/skills/run-lindisfarne/smoke.sh [SHOTS_DIR]
 #
@@ -23,13 +23,18 @@ exec godot .claude/skills/run-lindisfarne/driver.tscn \
   --shots="$SHOTS" \
   --log="$SHOTS/log.json" \
   --do="
-    wait 0.6; shot 01_spawn;
-    tp 10 0.5 4; yaw 0; wait 0.4;
-    note flat ground;    press move_forward; wait 1.2; shot 02_walk_flat;
-    note 20-degree ramp; press sprint;       wait 1.4; shot 03_on_ramp;
-    note platform top;                       wait 1.3; shot 04_on_platform;
-    note off the edge;   release sprint;     wait 0.9; shot 05_falling;
-    note back on ground; release move_forward; wait 1.4; shot 06_landed;
-    note arm vs wall;    tp -12 1 -4; yaw 180; wait 1.0; shot 07_camera_vs_wall;
-    note pitched down;   mouse 0 -400;        wait 0.3; shot 08_look_down
+    wait 0.6; shot 01_beach_spawn;
+    tp 0 0.5 26; yaw 0; wait 0.4;
+    note through the gate;  press move_forward; press sprint; wait 1.8; shot 02_gate;
+    note crossing court;                                      wait 1.7; shot 03_courtyard;
+    note church doorway;    release sprint;                   wait 1.6; shot 04_church_door;
+    note inside the nave;                                     wait 1.4; shot 05_nave;
+    release move_forward;
+    note stairwell mouth;   tp 9 0.5 9; yaw 0; wait 0.6;                shot 06_stair_top;
+    note on the stairs;     press move_forward;               wait 1.6; shot 07_on_stairs;
+    note underground;                                         wait 1.5; shot 08_crypt;
+    release move_forward;
+    note side building;     tp 12 0.5 -22; yaw -90; wait 0.6;           shot 09_side_door;
+    note inside side bldg;  press move_forward;               wait 1.5; shot 10_side_inside;
+    release move_forward
   "
