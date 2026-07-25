@@ -1,0 +1,8 @@
+# Godot 4 editor cache and imported resources
+.godot/
+/android/
+
+# Export artefacts
+export_presets.cfg
+*.translation
+build/

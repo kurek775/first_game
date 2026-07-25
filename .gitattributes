@@ -1,0 +1,6 @@
+# Godot scene/resource files are text and must stay LF, or the editor
+# rewrites every line on save and diffs become useless.
+* text=auto eol=lf
+*.tscn text eol=lf
+*.tres text eol=lf
+*.gd text eol=lf
